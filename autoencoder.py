@@ -46,6 +46,14 @@ def input_data():
 
   return train_data, train_label, test_data, test_label
 
+# Encoder-Decoder model
+def model(X, w_e, b_e, w_d, b_d):
+    #tf.sigmoid
+    encoded = tf.sigmoid(tf.matmul(X, w_e) + b_e)
+    decoded = tf.sigmoid(tf.matmul(encoded, w_d) + b_d)
+    
+    return encoded, decoded
+
 if __name__ == '__main__':
 
   start_time = time.time()
@@ -57,64 +65,42 @@ if __name__ == '__main__':
     
   x = tf.placeholder("float", shape=[None, 1024]) # input
   y_ = tf.placeholder("float", shape=[None, 2]) # output
-  sess = tf.InteractiveSession()
-  
-  x_image = tf.reshape(x, [-1, 32, 32, 1]) # array into image
-
-  #layer 1
-  W_conv1 = weight_variable([5, 5, 1, 32]) # 5x5patch, 32features
-  b_conv1 = bias_variable([32])
-  h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-  h_pool1 = max_pool_2x2(h_conv1)
-  
-  #layer 2
-  W_conv2 = weight_variable([3, 3, 32, 48]) # 3x3patch, 48features
-  b_conv2 = bias_variable([48])
-  h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-  h_pool2 = max_pool_2x2(h_conv2)
-
-  #layer 3
-  W_conv3 = weight_variable([3, 3, 48, 64]) # 3x3patch, 64features
-  b_conv3 = bias_variable([64])
-  h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
-  h_pool3 = max_pool_2x2(h_conv3)
-
-  #fully connectted layer
-  W_fc1 = weight_variable([4 * 4 * 64, 500]) # image size has been reduced to 7x7, fully connected 1024 neurons
-  b_fc1 = bias_variable([500])
-
-  h_pool3_flat = tf.reshape(h_pool3, [-1, 4 * 4 * 64]) # connect to fc layer
-  h_fc1 = tf.nn.relu6(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
-
   keep_prob = tf.placeholder("float")
-  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob) # dropout
-  W_fc2 = weight_variable([500, 2])
-  b_fc2 = bias_variable([2])
- 
-  y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2) # softmax
-  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+  
+  #keep_prob = tf.placeholder("float")
+  w_enc = tf.Variable(tf.random_normal([1024, 625], mean=0.0, stddev=0.05))
+  w_dec = tf.Variable(tf.random_normal([625, 1024], mean=0.0, stddev=0.05))
+  w_dec = tf.transpose(w_enc)
+  b_enc = tf.Variable(tf.zeros([625]))
+  b_dec = tf.Variable(tf.zeros([1024]))
 
-  cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+  sess = tf.InteractiveSession()
+
+  encoded, decoded = model(x, w_enc, b_enc, w_dec, b_dec)
+
   #optimize
-  #train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
-  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-  correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-  accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+  #cross_entropy = tf.pow(x - decoded, 2)
+  #cross_entropy = -tf.reduce_sum(x * tf.log(decoded))
+  #cross_entropy = -1. * x * tf.log(decoded) - (1. - x) * tf.log(1. - decoded)
+  print("cross_entropy:{0}".format(cross_entropy))
+  loss = tf.reduce_mean(cross_entropy)
+  train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
   sess.run(tf.initialize_all_variables())
 
   #training
   print("--- train start ---")
   for i in range(500):
     batch = mini_batch(train_data, train_label, i)
+    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
 
     if i % 100 == 0:
-      train_accuracy = accuracy.eval(feed_dict={
+      train_loss = loss.eval(feed_dict={
           x: batch[0], y_: batch[1], keep_prob: 1.0})
-      print ("step {0}, training accuracy {1}".format(i, train_accuracy))
-    train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+      print ("step {0}, loss {1}".format(i, train_loss))
+    
   print("--- train finished ---")
 
-  print("test accuracy {0}".format(accuracy.eval(feed_dict={
+  print("test loss {0}".format(loss.eval(feed_dict={
       x: test_data, y_: test_label, keep_prob: 1.0})))
   
   end_time = time.time()
