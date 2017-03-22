@@ -79,17 +79,16 @@ if __name__ == '__main__':
   encoded, decoded = model(x, w_enc, b_enc, w_dec, b_dec)
 
   #optimize
-  #cross_entropy = tf.pow(x - decoded, 2)
-  #cross_entropy = -tf.reduce_sum(x * tf.log(decoded))
-  #cross_entropy = -1. * x * tf.log(decoded) - (1. - x) * tf.log(1. - decoded)
-  print("cross_entropy:{0}".format(cross_entropy))
+  cross_entropy = -1. * tf.reduce_sum(x * tf.log(decoded))
+  #ross_entropy = -1. * x * tf.log(decoded) - (1. - x) * tf.log(1. - decoded)
+  #print("cross_entropy:{0}".format(cross_entropy))
   loss = tf.reduce_mean(cross_entropy)
   train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
   sess.run(tf.initialize_all_variables())
 
   #training
   print("--- train start ---")
-  for i in range(500):
+  for i in range(10000):
     batch = mini_batch(train_data, train_label, i)
     train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
 
