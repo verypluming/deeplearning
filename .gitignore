@@ -1,3 +1,4 @@
 MNIST_data
-data.txt
-label.txt
+*.txt
+*.ipynb
+backup

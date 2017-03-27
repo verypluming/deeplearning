@@ -168,6 +168,7 @@ def run_inference_on_image(image):
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
+    print(softmax_tensor.eval())
     predictions = sess.run(softmax_tensor,
                            {'DecodeJpeg/contents:0': image_data})
     predictions = np.squeeze(predictions)
