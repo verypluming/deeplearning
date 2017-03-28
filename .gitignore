@@ -2,3 +2,7 @@ MNIST_data
 *.txt
 *.ipynb
 backup
+data
+runs
+__pycache__
+
