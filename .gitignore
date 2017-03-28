@@ -5,4 +5,5 @@ backup
 data
 runs
 __pycache__
+.DS_Store
 
